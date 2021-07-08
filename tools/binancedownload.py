@@ -1,9 +1,10 @@
 from binance.client import Client
+from binance.enums import HistoricalKlinesType
 import pandas as pd
 import numpy as np
 import re, datetime
 from api import api_key, api_secret
-import sys
+
 """
 # fetch 1 minute klines for the last day up until now
 klines = client.get_historical_klines("BNBBTC", Client.KLINE_INTERVAL_1MINUTE, "1 day ago UTC")
@@ -20,12 +21,15 @@ List[Dict[str, str]]
 print(testy(d,"BNB"))
 x = [d[key] for key in d.keys() if re.match(key, "BNB")]
 
-def testy(d, event):
-    for key in d.keys():
-        if re.match(key, event):
-            yield d[key]
+  get_historical_klines_generator(symbol, interval, start_str, end_str=None, 
+    klines_type: binance.enums.HistoricalKlinesType = <HistoricalKlinesType.SPOT: 1>)
 """
 client = Client(api_key, api_secret)
+
+_symbol = "BNBUSDT"
+_interval = Client.KLINE_INTERVAL_15MINUTE
+_startTime = int((datetime.datetime.now() - datetime.timedelta(30)).timestamp() * 1000)
+_endTime = int(datetime.datetime.now().timestamp() * 1000)
 
 try:
     allSymbols = client.get_all_tickers()
@@ -38,33 +42,41 @@ except IOError as strerror :
     print ("I/O error: {1}".format( strerror))
 
 
-def getCandles(_symbol="BNBBTC",_interval=Client.KLINE_INTERVAL_15MINUTE,_startTime="",_endTime=""):
-    if _startTime == "":
-        _startTime = datetime.datetime.now() - datetime.timedelta(30)
-        print("UTC: " + str(int(_startTime.utcnow().timestamp() * 1000)))
+def getCandles(_symbol=_symbol,_interval=_interval,_startTime=_startTime,_endTime=_endTime):
 
-    df = pd.DataFrame(columns= ['Open_time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close_time'])
-    #candles = client.get_klines(symbol='BTCUSDT', interval=Client.KLINE_INTERVAL_1MINUTE, startTime="a", endTime="b")
-    candles = client.get_klines(symbol=_symbol, interval=_interval, startTime=int(_startTime.utcnow().timestamp() * 1000))
-
-    opentime, lopen, lhigh, llow, lclose, lvol, closetime = [], [], [], [], [], [], []
+    df = pd.DataFrame(columns= ['Open_time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    # df = pd.DataFrame(columns= ['Open_time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close_time'])
+    #candles = client.get_klines(symbol=_symbol, interval=_interval,startTime=str(_startTime), endTime=str(_endTime))
+    candles = client.get_historical_klines_generator(symbol=_symbol, interval=_interval,start_str=_startTime, end_str=_endTime,klines_type=HistoricalKlinesType.SPOT)
+    opentime, lopen, lhigh, llow, lclose, lvol = [], [], [], [], [], []
+    #opentime, lopen, lhigh, llow, lclose, lvol, closetime = [], [], [], [], [], [], []
 
     for candle in candles:
-        opentime.append(candle[0])
+        oTime = datetime.datetime.fromtimestamp(int(candle[0] / 1000)).strftime('%Y-%m-%d')
+        opentime.append(oTime)
         lopen.append(candle[1])
         lhigh.append(candle[2])
         llow.append(candle[3])
         lclose.append(candle[4])
         lvol.append(candle[5])
-        closetime.append(candle[6])
+     #   cTime = datetime.datetime.fromtimestamp(int(candle[6] / 1000)).strftime('%Y-%m-%d')
+     #   closetime.append(cTime)
 
+    
     df['Open_time'] = opentime
     df['Open'] = np.array(lopen).astype(float)
     df['High'] = np.array(lhigh).astype(float)
     df['Low'] = np.array(llow).astype(float)
     df['Close'] = np.array(lclose).astype(float)
     df['Volume'] = np.array(lvol).astype(float)
-    df['Close_time'] = closetime
+  #  df['Close_time'] = closetime
     return df
 
-results = getCandles("BNBUSDT")
+#ts = str(int(datetime.datetime.now().utcnow().timestamp()))
+
+results = getCandles()
+startTimestamp = datetime.datetime.fromtimestamp(int(_startTime / 1000)).strftime('%Y%m%d')
+endTimeStamp = datetime.datetime.fromtimestamp(int(_endTime / 1000)).strftime('%Y%m%d')
+fileName = "Binance_" + _symbol+"_" + _interval + "_" + startTimestamp + "-" + endTimeStamp
+results.to_csv( 'datas/' + fileName + '.csv', index=False)
+print("Done")
