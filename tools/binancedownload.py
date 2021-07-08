@@ -14,11 +14,7 @@ klines = client.get_historical_klines("NEOBTC", Client.KLINE_INTERVAL_1WEEK, "1 
 
 https://python-binance.readthedocs.io/en/latest/market_data.html#id7
 
-RO Key: K0WjrxGuoxQaPdBzqy6FmFhyLvz7ERSxqgUjEh95NyZEKBj4OYz8tbvTKwjXbs9t
-RW key: xVaBtj3Zc47nA2HL17rvrjmBKPLmRHsbcVBrCTjXAjKg0yeEn7PGMlQ1sh4adldL
-"""
-api_key = "K0WjrxGuoxQaPdBzqy6FmFhyLvz7ERSxqgUjEh95NyZEKBj4OYz8tbvTKwjXbs9t"
-api_secret = "xVaBtj3Zc47nA2HL17rvrjmBKPLmRHsbcVBrCTjXAjKg0yeEn7PGMlQ1sh4adldL"
+
 
 def testy(d, event):
     for key in d.keys():
@@ -28,8 +24,11 @@ def testy(d, event):
 
 client = Client(api_key, api_secret)
 
-d = client.get_all_tickers()
+allSymbols = client.get_all_tickers()
+for symbol in allSymbols:
+    print(symbol[1])
 """
+List[Dict[str, str]]
 print(testy(d,"BNB"))
 x = [d[key] for key in d.keys() if re.match(key, "BNB")]
 """
