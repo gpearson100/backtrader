@@ -72,4 +72,4 @@ datas/*.py
 
 #misc
 .vscode/settings.json
-.vscode/settings.json
+tools/api.py
