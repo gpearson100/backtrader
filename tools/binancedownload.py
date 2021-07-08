@@ -1,8 +1,9 @@
 from binance.client import Client
 import pandas as pd
 import numpy as np
-import re
+import re, datetime
 from api import api_key, api_secret
+import sys
 """
 # fetch 1 minute klines for the last day up until now
 klines = client.get_historical_klines("BNBBTC", Client.KLINE_INTERVAL_1MINUTE, "1 day ago UTC")
@@ -26,16 +27,25 @@ def testy(d, event):
 """
 client = Client(api_key, api_secret)
 
-
-allSymbols = client.get_all_tickers()
-for symbol in allSymbols:
-    print(symbol[1])
+try:
+    allSymbols = client.get_all_tickers()
+    f = open("symbols.txt", "w")
+    for symbol in allSymbols:
+        f.write(symbol["symbol"]+ "\n")
+    f.flush()
+    f.close()
+except IOError as strerror :
+    print ("I/O error: {1}".format( strerror))
 
 
 def getCandles(_symbol="BNBBTC",_interval=Client.KLINE_INTERVAL_15MINUTE,_startTime="",_endTime=""):
+    if _startTime == "":
+        _startTime = datetime.datetime.now() - datetime.timedelta(30)
+        print("UTC: " + str(int(_startTime.utcnow().timestamp() * 1000)))
+
     df = pd.DataFrame(columns= ['Open_time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close_time'])
     #candles = client.get_klines(symbol='BTCUSDT', interval=Client.KLINE_INTERVAL_1MINUTE, startTime="a", endTime="b")
-    candles = client.get_klines(_symbol)
+    candles = client.get_klines(symbol=_symbol, interval=_interval, startTime=int(_startTime.utcnow().timestamp() * 1000))
 
     opentime, lopen, lhigh, llow, lclose, lvol, closetime = [], [], [], [], [], [], []
 
@@ -49,11 +59,11 @@ def getCandles(_symbol="BNBBTC",_interval=Client.KLINE_INTERVAL_15MINUTE,_startT
         closetime.append(candle[6])
 
     df['Open_time'] = opentime
-    df['Open'] = np.array(lopen).astype(np.float)
-    df['High'] = np.array(lhigh).astype(np.float)
-    df['Low'] = np.array(llow).astype(np.float)
-    df['Close'] = np.array(lclose).astype(np.float)
-    df['Volume'] = np.array(lvol).astype(np.float)
+    df['Open'] = np.array(lopen).astype(float)
+    df['High'] = np.array(lhigh).astype(float)
+    df['Low'] = np.array(llow).astype(float)
+    df['Close'] = np.array(lclose).astype(float)
+    df['Volume'] = np.array(lvol).astype(float)
     df['Close_time'] = closetime
     return df
 
