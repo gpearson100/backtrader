@@ -3,7 +3,7 @@ from binance.enums import HistoricalKlinesType
 import pandas as pd
 import numpy as np
 import re, datetime
-from api import api_key, api_secret
+from api import api_key, api_secret, proxies
 
 """
 # fetch 1 minute klines for the last day up until now
@@ -24,20 +24,22 @@ x = [d[key] for key in d.keys() if re.match(key, "BNB")]
   get_historical_klines_generator(symbol, interval, start_str, end_str=None, 
     klines_type: binance.enums.HistoricalKlinesType = <HistoricalKlinesType.SPOT: 1>)
 """
-client = Client(api_key, api_secret)
+client = Client(api_key, api_secret, {'proxies': proxies})
 
 _symbol = "BNBUSDT"
 _interval = Client.KLINE_INTERVAL_15MINUTE
 _startTime = int((datetime.datetime.now() - datetime.timedelta(30)).timestamp() * 1000)
 _endTime = int(datetime.datetime.now().timestamp() * 1000)
+getSymbols = False
 
 try:
-    allSymbols = client.get_all_tickers()
-    f = open("symbols.txt", "w")
-    for symbol in allSymbols:
-        f.write(symbol["symbol"]+ "\n")
-    f.flush()
-    f.close()
+    if getSymbols:
+        allSymbols = client.get_all_tickers()
+        f = open("symbols.txt", "w")
+        for symbol in allSymbols:
+            f.write(symbol["symbol"]+ "\n")
+        f.flush()
+        f.close()
 except IOError as strerror :
     print ("I/O error: {1}".format( strerror))
 
